@@ -12,10 +12,15 @@ plugins {
 
 And the following dependencies are needed
 ```
+repositories {
+    ...
+    maven { url = uri("https://jitpack.io") }
+}
+
 dependencies {
     ...
-    ksp(project(":processor"))
-    implementation(project(":annotations"))
+    ksp("com.github.dimitark.ktor-annotations:processor:0.0.2")
+    implementation("com.github.dimitark.ktor-annotations:annotations:0.0.2")
     ...
 }
 ```
@@ -48,6 +53,16 @@ fun main() {
         
         ktorRoutingAnnotationConfig()
     }.start(wait = true)
+}
+```
+
+# Options
+By default, the processor generates code that depends on Koin and Ktor's Authentication. 
+To disable those, you need to pass some arguments to kps. In you gradle build script add:
+```
+ksp {
+    arg("ktor-annotations-auth", "disabled")
+    arg("ktor-annotations-koin", "disabled")
 }
 ```
 

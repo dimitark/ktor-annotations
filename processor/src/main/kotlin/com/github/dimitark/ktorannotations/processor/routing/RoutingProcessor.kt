@@ -12,8 +12,8 @@ val AnnotationClasses = setOf(RouteController::class, Get::class, Post::class, P
 
 class RoutingProcessor(private val logger: KSPLogger, private val codeGenerator: CodeGenerator, options: Map<String, String>): SymbolProcessor {
 
-    private val authEnabled = options["auth"] != "disabled"
-    private val koinEnabled = options["koin"] != "disabled"
+    private val authEnabled = options["ktor-annotations-auth"] != "disabled"
+    private val koinEnabled = options["ktor-annotations-koin"] != "disabled"
 
     private val visitor = RouteVisitor(logger = logger, koinEnabled = koinEnabled, authEnabled = authEnabled)
 
