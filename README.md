@@ -33,6 +33,24 @@ class SampleController {
 }
 ```
 
+This will generate a Ktor Application extension function (`com.github.dimitark.ktor.routing.ktorRoutingAnnotationConfig`), that defines all the routes that are annotated. 
+
+To start using them, you must call that function from within the Ktor Application.
+
+```kotlin
+...
+import com.github.dimitark.ktor.routing.ktorRoutingAnnotationConfig
+...
+
+fun main() {
+    embeddedServer(Netty, port = 8000) {
+        ...
+        
+        ktorRoutingAnnotationConfig()
+    }.start(wait = true)
+}
+```
+
 # Debugging the KSP processor
 
 Run the Gradle daemon with:
