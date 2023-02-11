@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm")
     id("maven-publish")
+    `java-library`
 }
 
 group = "com.github.dimitark.ktorannotations"
