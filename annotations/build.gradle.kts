@@ -1,7 +1,10 @@
 plugins {
     kotlin("jvm")
-    id("maven")
+    id("maven-publish")
 }
+
+group = "com.github.dimitark.ktorannotations"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
