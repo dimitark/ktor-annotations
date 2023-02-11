@@ -11,6 +11,19 @@ repositories {
     mavenCentral()
 }
 
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.github.dimitark.ktorannotations"
+            artifactId = "processor"
+            version = "0.0.1"
+
+            from(components["java"])
+        }
+    }
+}
+
 dependencies {
     implementation("com.google.devtools.ksp:symbol-processing-api:1.8.0-1.0.8")
 
