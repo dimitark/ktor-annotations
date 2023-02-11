@@ -9,7 +9,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation(project(":processor"))
+
     implementation(project(":annotations"))
     ksp(project(":processor"))
 
