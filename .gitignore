@@ -1,0 +1,20 @@
+.DS_Store
+node_modules/
+/dist/
+
+### Binary ###
+target/
+out/
+build/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### Gradle ###
+.gradle
+
+
+frontend/.history/
