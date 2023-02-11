@@ -4,10 +4,7 @@ import com.github.dimitark.ktorannotations.annotations.*
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSNode
+import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.visitor.KSEmptyVisitor
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
@@ -17,6 +14,9 @@ class RouteVisitor(private val logger: KSPLogger, val koinEnabled: Boolean, val 
 
     private val controllers = mutableSetOf<ControllerDef>()
     private val functions = mutableListOf<RouteFun>()
+    private val dependencyFiles = mutableSetOf<KSFile>()
+
+    fun dependencies() = dependencyFiles
 
     fun resolve(): Map<ControllerDef, List<RouteFun>> = functions
         .groupBy { it.parent }
@@ -42,6 +42,8 @@ class RouteVisitor(private val logger: KSPLogger, val koinEnabled: Boolean, val 
                 clazz = classDeclaration
             )
         )
+
+        classDeclaration.containingFile?.let { dependencyFiles.add(it) }
     }
 
     @OptIn(KspExperimental::class)
@@ -71,6 +73,8 @@ class RouteVisitor(private val logger: KSPLogger, val koinEnabled: Boolean, val 
                 authenticationProvider = authProvider
             )
         )
+
+        function.containingFile?.let { dependencyFiles.add(it) }
     }
 
     @OptIn(KspExperimental::class)

@@ -4,6 +4,7 @@ import com.github.dimitark.ktor.routing.ktorRoutingAnnotationConfig
 import com.github.dimitark.ktorannotations.KtorContext
 import com.github.dimitark.ktorannotations.annotations.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.response.*
@@ -12,6 +13,10 @@ import org.koin.ktor.plugin.Koin
 
 fun main() {
     embeddedServer(Netty, port = 8000) {
+        install(Authentication) {
+            basic { }
+            basic("auth-provider") {  }
+        }
         install(Koin) {
             modules(
                 module {

@@ -1,6 +1,7 @@
 package com.github.dimitark.ktorannotations.processor.routing
 
 import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -40,7 +41,7 @@ object RouteConfigCodeGenerator {
         fileBuilder.addFunction(routes.generateConfigFun(visitor))
 
         // Write the file
-        fileBuilder.build().writeTo(codeGenerator, aggregating = false)
+        fileBuilder.build().writeTo(codeGenerator, Dependencies(aggregating = true, *visitor.dependencies().toTypedArray()))
     }
 
     private fun Map<ControllerDef, List<RouteFun>>.generateConfigFun(visitor: RouteVisitor): FunSpec {
