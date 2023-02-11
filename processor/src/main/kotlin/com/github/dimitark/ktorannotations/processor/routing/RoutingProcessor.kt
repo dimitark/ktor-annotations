@@ -10,12 +10,17 @@ import kotlin.reflect.KClass
 
 val AnnotationClasses = setOf(RouteController::class, Get::class, Post::class, Put::class, Delete::class)
 
-class RoutingProcessor(private val logger: KSPLogger, private val codeGenerator: CodeGenerator): SymbolProcessor {
+class RoutingProcessor(private val logger: KSPLogger, private val codeGenerator: CodeGenerator, options: Map<String, String>): SymbolProcessor {
 
-    private val visitor = RouteVisitor()
+    private val authEnabled = options["auth"] != "disabled"
+    private val koinEnabled = options["koin"] != "disabled"
+
+    private val visitor = RouteVisitor(logger = logger, koinEnabled = koinEnabled, authEnabled = authEnabled)
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        logger.info("Ktor Routing processor...")
+        logger.info("Ktor Annotation Routing processor...")
+        logger.info("Ktor Annotations: auth enabled = ${authEnabled}; koin enabled = $koinEnabled")
+
         AnnotationClasses.forEach { resolver.visitAnnotated(it) }
         return emptyList()
     }

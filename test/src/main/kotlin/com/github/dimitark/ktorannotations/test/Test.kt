@@ -24,6 +24,13 @@ fun main() {
     }.start(wait = true)
 }
 
+@RouteController
+class KoinLessController {
+    @Get("/koin-less")
+    suspend fun koinLess(context: KtorContext) {
+        context.call.respondText("Koin-less controller...")
+    }
+}
 
 @RouteController
 class TestController(private val service: Service) {
@@ -36,6 +43,30 @@ class TestController(private val service: Service) {
     @Post("/{test}")
     suspend fun inControllerPost(context: KtorContext) {
         context.call.respondText("In Controller Post... ${service.test()} - ${context.call.parameters["test"]}")
+    }
+
+    @ProtectedRoute
+    @Get("/protected-0")
+    suspend fun protected0(context: KtorContext) {
+        context.call.respondText("Protected 0")
+    }
+
+    @ProtectedRoute
+    @Get("/protected-1")
+    suspend fun protected1(context: KtorContext) {
+        context.call.respondText("Protected 1")
+    }
+
+    @ProtectedRoute("auth-provider")
+    @Get("/protected-named-0")
+    suspend fun protectedNamed0(context: KtorContext) {
+        context.call.respondText("Protected named 0")
+    }
+
+    @ProtectedRoute("auth-provider")
+    @Get("/protected-named-1")
+    suspend fun protectedNamed1(context: KtorContext) {
+        context.call.respondText("Protected named 1")
     }
 }
 

@@ -21,36 +21,43 @@ object RouteConfigCodeGenerator {
         val routes = visitor.resolve()
 
         // Add the standard imports
-        fileBuilder
-            .addImport("org.koin.dsl", "module")
-            .addImport("org.koin.ktor.ext", "inject")
-            .addImport("org.koin.core.context", "loadKoinModules")
+        if (visitor.authEnabled) {
+            fileBuilder.addImport("io.ktor.server.auth", "authenticate")
+        }
+
+        if (visitor.koinEnabled) {
+            fileBuilder
+                .addImport("org.koin.dsl", "module")
+                .addImport("org.koin.ktor.ext", "inject")
+                .addImport("org.koin.core.context", "loadKoinModules")
+        }
 
         // Add the imports for all the http methods
         val uniqueMethods = routes.values.flatten().map { it.method }.toSet().toTypedArray()
         fileBuilder.addImport(KtorRoutingPackageName, *(arrayOf("routing") + uniqueMethods))
 
         // Add the routes config fun
-        fileBuilder.addFunction(routes.generateConfigFun())
+        fileBuilder.addFunction(routes.generateConfigFun(visitor))
 
         // Write the file
         fileBuilder.build().writeTo(codeGenerator, aggregating = false)
     }
 
-    private fun Map<ControllerDef, List<RouteFun>>.generateConfigFun(): FunSpec {
-        val (koinDef, controllersInject) = controllers()
+    private fun Map<ControllerDef, List<RouteFun>>.generateConfigFun(visitor: RouteVisitor): FunSpec {
+        val (koinDef, controllersInject) = controllers(visitor)
+
+        val funCode = CodeBlock.builder()
+
+        if (visitor.koinEnabled) {
+            funCode.add(generateKoinModuleDefinition(koinDef))
+        }
+
+        funCode.add(controllersInject).add(generateRoutingConfig())
 
         return FunSpec
             .builder(RoutingConfigFunName)
             .receiver(ClassName.bestGuess(KtorApplicationClassName))
-            .addCode(
-                CodeBlock
-                    .builder()
-                    .add(generateKoinModuleDefinition(koinDef))
-                    .add(controllersInject)
-                    .add(generateRoutingConfig())
-                    .build()
-            )
+            .addCode(funCode.build())
             .build()
     }
 
@@ -60,7 +67,7 @@ object RouteConfigCodeGenerator {
         .addStatement("""})""")
         .build()
 
-    private fun Map<ControllerDef, List<RouteFun>>.controllers(): Pair<CodeBlock, CodeBlock> {
+    private fun Map<ControllerDef, List<RouteFun>>.controllers(visitor: RouteVisitor): Pair<CodeBlock, CodeBlock> {
         val controllersKoin = CodeBlock.builder()
         val controllersCode = CodeBlock.builder()
 
@@ -69,7 +76,11 @@ object RouteConfigCodeGenerator {
             val constructorParams = (controller.clazz.primaryConstructor?.parameters ?: emptyList()).joinToString(", ") { "get()" }
             controllersKoin.addStatement("""single { ${fullName}($constructorParams) }""")
 
-            controllersCode.addStatement("""val controller${controller.uuid} by inject<${fullName}>()""")
+            if (visitor.koinEnabled) {
+                controllersCode.addStatement("""val controller${controller.uuid} by inject<${fullName}>()""")
+            } else {
+                controllersCode.addStatement("""val controller${controller.uuid} = ${fullName}()""")
+            }
         }
 
         return controllersKoin.build() to controllersCode.build()
@@ -78,8 +89,18 @@ object RouteConfigCodeGenerator {
     private fun Map<ControllerDef, List<RouteFun>>.generateRoutingConfig(): CodeBlock {
         val funCode = CodeBlock.builder().addStatement("routing {")
 
-        entries.forEach { (controller, functions) ->
-            functions.forEach { function ->
+        // Group them by authentication provider
+        val groupedByAuthProvider = entries
+            .flatMap { it.value.map { value -> value to it.key } }
+            .groupBy { it.first.authenticationProvider }
+
+        groupedByAuthProvider.forEach { (authProvider, functions) ->
+
+            if (authProvider != null) {
+                funCode.addStatement("""authenticate${authProvider.takeIf { it.isNotBlank() }?.inBracketsAndQuotes() ?: ""} {""")
+            }
+
+            functions.forEach { (function, controller) ->
                 funCode.add(
                     CodeBlock.builder()
                         .addStatement("""   ${function.method}("${function.path}") {""")
@@ -87,6 +108,10 @@ object RouteConfigCodeGenerator {
                         .addStatement("""   }""")
                         .build()
                 )
+            }
+
+            if (authProvider != null) {
+                funCode.addStatement("""}""")
             }
         }
 
@@ -98,4 +123,6 @@ object RouteConfigCodeGenerator {
     }
 
     private fun KSClassDeclaration.fullName() = listOf(packageName.getQualifier(), packageName.getShortName(), simpleName.getShortName()).joinToString(".")
+
+    private fun String.inBracketsAndQuotes() = """("$this")"""
 }
