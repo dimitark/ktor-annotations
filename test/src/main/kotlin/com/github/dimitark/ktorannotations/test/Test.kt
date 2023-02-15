@@ -8,6 +8,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.response.*
+import io.ktor.util.pipeline.*
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 
@@ -15,7 +16,7 @@ fun main() {
     embeddedServer(Netty, port = 8000) {
         install(Authentication) {
             basic { }
-            basic("auth-provider") {  }
+            basic("jwt-auth-provider") {  }
         }
         install(Koin) {
             modules(
@@ -40,38 +41,36 @@ class KoinLessController {
 @RouteController
 class TestController(private val service: Service) {
 
-    @Get("/in-controller")
-    suspend fun inController(context: KtorContext) {
-        context.call.respondText("In Controller... ${service.test()}")
+    @Get("/in-controller-context")
+    suspend fun inControllerContext(context: KtorContext) {
+        context.call.respondText("In Controller Context... ${service.test()}")
+    }
+
+    @Get("/in-controller-call")
+    suspend fun inControllerCall(call: ApplicationCall) {
+        call.respondText("In Controller Call... ${service.test()}")
+    }
+
+    @Get("/in-controller-pipeline")
+    suspend fun inControllerPipeline(pipeline: PipelineContext<Unit, ApplicationCall>) {
+        pipeline.call.respondText("In Controller Pipeline... ${service.test()}")
     }
 
     @Post("/{test}")
-    suspend fun inControllerPost(context: KtorContext) {
-        context.call.respondText("In Controller Post... ${service.test()} - ${context.call.parameters["test"]}")
+    suspend fun inControllerPost(call: ApplicationCall) {
+        call.respondText("In Controller Post... ${service.test()} - ${call.parameters["test"]}")
     }
 
     @ProtectedRoute
-    @Get("/protected-0")
-    suspend fun protected0(context: KtorContext) {
-        context.call.respondText("Protected 0")
+    @Get("/protected")
+    suspend fun protected(call: ApplicationCall) {
+        call.respondText("Protected 1")
     }
 
-    @ProtectedRoute
-    @Get("/protected-1")
-    suspend fun protected1(context: KtorContext) {
-        context.call.respondText("Protected 1")
-    }
-
-    @ProtectedRoute("auth-provider")
-    @Get("/protected-named-0")
-    suspend fun protectedNamed0(context: KtorContext) {
-        context.call.respondText("Protected named 0")
-    }
-
-    @ProtectedRoute("auth-provider")
-    @Get("/protected-named-1")
-    suspend fun protectedNamed1(context: KtorContext) {
-        context.call.respondText("Protected named 1")
+    @ProtectedRoute("jwt-auth-provider")
+    @Get("/protected-jwt")
+    suspend fun protectedJwt(call: ApplicationCall) {
+        call.respondText("Protected named 0")
     }
 }
 

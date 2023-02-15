@@ -19,8 +19,8 @@ repositories {
 
 dependencies {
     ...
-    ksp("com.github.dimitark.ktor-annotations:processor:0.0.2")
-    implementation("com.github.dimitark.ktor-annotations:annotations:0.0.2")
+    ksp("com.github.dimitark.ktor-annotations:processor:0.0.3")
+    implementation("com.github.dimitark.ktor-annotations:annotations:0.0.3")
     ...
 }
 ```
@@ -28,13 +28,54 @@ dependencies {
 ## Code
 To use the Ktor annotation configuration, you need to define RouteControllers. You do that by annotating classes with the `@RouteController` annotation. 
 And then in the controller, you can define your endpoints, like in the example below.
+
+**If Koin is not disabled (default behaviour)** you can Autowire instances of classes defined in your Koin modules by defining them in the controller's primary constructor. 
+
+You can define the following parameters in your annotated functions:
+* `KtorContext` - which is a `typealias` to `PipelineContext<Unit, ApplicationCall>`
+* `PipelineContext<Unit, ApplicationCall>`
+* `ApplicationCall`
+
 ```kotlin
 @RouteController
-class SampleController {
-    @Get("/home")
-    suspend fun koinLess(context: KtorContext) {
-        context.call.respondText("Home content...")
+class TestController(private val service: Service) {
+
+    @Get("/in-controller-context")
+    suspend fun inControllerContext(context: KtorContext) {
+        context.call.respondText("In Controller Context... ${service.test()}")
     }
+
+    @Get("/in-controller-call")
+    suspend fun inControllerCall(call: ApplicationCall) {
+        call.respondText("In Controller Call... ${service.test()}")
+    }
+
+    @Get("/in-controller-pipeline")
+    suspend fun inControllerPipeline(pipeline: PipelineContext<Unit, ApplicationCall>) {
+        pipeline.call.respondText("In Controller Pipeline... ${service.test()}")
+    }
+
+    @Post("/{test}")
+    suspend fun inControllerPost(call: ApplicationCall) {
+        call.respondText("In Controller Post... ${service.test()} - ${call.parameters["test"]}")
+    }
+}
+```
+
+### Protected
+
+If the auth is not disabled (default behaviour) - you can annotate your route functions with the `@Protected(authProviderName)` annotation. 
+```kotlin
+@ProtectedRoute
+@Get("/protected")
+suspend fun protected(call: ApplicationCall) {
+    call.respondText("Protected 1")
+}
+
+@ProtectedRoute("jwt-auth-provider")
+@Get("/protected-jwt")
+suspend fun protectedJwt(call: ApplicationCall) {
+    call.respondText("Protected named 0")
 }
 ```
 

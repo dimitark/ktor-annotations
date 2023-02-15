@@ -1,6 +1,8 @@
 package com.github.dimitark.ktorannotations.processor.routing
 
 import com.github.dimitark.ktorannotations.annotations.*
+import com.github.dimitark.ktorannotations.processor.routing.models.ControllerDef
+import com.github.dimitark.ktorannotations.processor.routing.models.RouteFun
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.KSPLogger
@@ -63,12 +65,18 @@ class RouteVisitor(private val logger: KSPLogger, val koinEnabled: Boolean, val 
             logger.error("Protected routes only supported when Auth is enabled", function)
         }
 
+        // Resolve the function parameters and throw an error if there is parameter with a type that cannot be resolved
+        val params = function.parameters.map { it.type.resolve().declaration.qualifiedName?.asString() }.mapIndexedNotNull { index, paramType ->
+            RouteFunParameters[paramType] ?: kotlin.run { logger.error("Function parameter (index: $index) with an unknown type", function); null }
+        }
+
         functions.add(
             RouteFun(
                 path = path,
                 method = method,
                 funPackage = function.qualifiedName?.getQualifier() ?: "",
                 funName = function.simpleName.getShortName(),
+                params = params,
                 parent = parent,
                 authenticationProvider = authProvider
             )
@@ -80,14 +88,3 @@ class RouteVisitor(private val logger: KSPLogger, val koinEnabled: Boolean, val 
     @OptIn(KspExperimental::class)
     private fun KSDeclaration.authProvider() = getAnnotationsByType(ProtectedRoute::class).firstOrNull()?.value
 }
-
-data class ControllerDef(val uuid: Int, val clazz: KSClassDeclaration)
-
-data class RouteFun(
-    val path: String,
-    val method: String,
-    val funPackage: String,
-    val funName: String,
-    val parent: ControllerDef,
-    val authenticationProvider: String? = null
-)

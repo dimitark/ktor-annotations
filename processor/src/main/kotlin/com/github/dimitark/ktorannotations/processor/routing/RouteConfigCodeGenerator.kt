@@ -1,5 +1,7 @@
 package com.github.dimitark.ktorannotations.processor.routing
 
+import com.github.dimitark.ktorannotations.processor.routing.models.ControllerDef
+import com.github.dimitark.ktorannotations.processor.routing.models.RouteFun
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -36,6 +38,11 @@ object RouteConfigCodeGenerator {
         // Add the imports for all the http methods
         val uniqueMethods = routes.values.flatten().map { it.method }.toSet().toTypedArray()
         fileBuilder.addImport(KtorRoutingPackageName, *(arrayOf("routing") + uniqueMethods))
+
+        // Add the imports for the function parameters
+        routes.values.flatMap { it.map { routeFun -> routeFun.params } }.flatMap { it.mapNotNull { param -> param.import } }.forEach { (packageName, name) ->
+            fileBuilder.addImport(packageName, name)
+        }
 
         // Add the routes config fun
         fileBuilder.addFunction(routes.generateConfigFun(visitor))
@@ -120,7 +127,8 @@ object RouteConfigCodeGenerator {
     }
 
     private fun CodeBlock.Builder.functionCall(controller: ControllerDef, function: RouteFun) = apply {
-        addStatement("""controller${controller.uuid}.${function.funName}(this)""")
+        val paramsExpression = function.params.joinToString(", ") { it.callExpression }
+        addStatement("""controller${controller.uuid}.${function.funName}($paramsExpression)""")
     }
 
     private fun KSClassDeclaration.fullName() = listOf(packageName.getQualifier(), packageName.getShortName(), simpleName.getShortName()).joinToString(".")
