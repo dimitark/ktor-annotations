@@ -79,7 +79,9 @@ suspend fun protectedJwt(call: ApplicationCall) {
 }
 ```
 
-This will generate a Ktor Application extension function (`com.github.dimitark.ktor.routing.ktorRoutingAnnotationConfig`), that defines all the routes that are annotated. 
+## Including the generated route configuration in your application
+
+The ksp processor will generate a Ktor Application extension function (`com.github.dimitark.ktor.routing.ktorRoutingAnnotationConfig`), that defines all the routes that are annotated. 
 
 To start using them, you must call that function from within the Ktor Application.
 
